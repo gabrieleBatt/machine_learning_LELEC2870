@@ -1,21 +1,33 @@
 import numpy as np
 import pandas as pd
+from sklearn.feature_selection import mutual_info_regression
 
 from common import *
 
-def selectFeatures(Xn, Y, min_cor):
-	n_feats = Xn.values.T.shape[0]
-	priority_list = []
-	for column in Xn.columns.values:
-		correlation = np.corrcoef(Xn[column].values.T, Y.values.T[0])[0][1]
-		priority_list.append((column,correlation))
-		
-	priority_list.sort(reverse = True)
-	
-	discarded_feats = [column for column,correlation in priority_list if np.abs(correlation) < min_cor]
+def discardFeatures(Xn, feature_list):
+	discarded_feats = [column for column,value in feature_list if value < 0.2]
 	
 	Xn = Xn.drop(columns=discarded_feats)
 	return Xn
+
+def selectFeaturesMI(Xn, Y):
+	feature_list = []
+	mutual_info_list = mutual_info_regression(Xn.values, Y.values.T[0])
+	for column in Xn.columns.values:
+		mutual_info = mutual_info_regression(Xn[column].values.reshape(-1,1), Y.values.T[0])
+		feature_list.append((column,mutual_info))
+	
+	return discardFeatures(Xn, feature_list)
+	
+def selectFeaturesCorrelation(Xn, Y):
+	feature_list = []
+	for column in Xn.columns.values:
+		correlation = np.corrcoef(Xn[column].values.T, Y.values.T[0])[0][1]
+		feature_list.append((column,np.abs(correlation)))
+		
+	feature_list.sort(reverse = True)
+	
+	return discardFeatures(Xn, feature_list)
 	
 def normalizeDate(year, day, month):
 	normalized = []
