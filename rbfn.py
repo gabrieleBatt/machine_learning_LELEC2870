@@ -4,7 +4,7 @@ from sklearn.linear_model import LinearRegression
 
 from common import *
 
-class MyRBFN():
+class RBFN():
     def __init__(self, nb_centers, width_scaling):
         super().__init__()
         self.nb_centers = nb_centers

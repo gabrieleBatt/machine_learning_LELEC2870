@@ -1,4 +1,5 @@
 import math
+import random
 from sklearn.metrics import mean_squared_error
 
 YEAR = 'year'
@@ -30,3 +31,18 @@ def dump(str, obj):
 	
 def RMSE(Y_actual, Y_predicted):
 	return math.sqrt(mean_squared_error(Y_actual, Y_predicted))
+	
+	
+def divideSets(X, Y, ratio):
+		id_set = list(X.index)
+		random.Random(0).shuffle(id_set)
+		
+		test_id_set = id_set[:int(X.shape[0]*ratio)]
+		training_id_set = id_set[int(X.shape[0]*ratio):]
+
+		X_training =  X.drop(test_id_set,axis=0)
+		Y_training =  Y.drop(test_id_set,axis=0)
+
+		X_test = X.drop(training_id_set,axis=0)
+		Y_test = Y.drop(training_id_set,axis=0)
+		return (X_training, Y_training, X_test, Y_test)

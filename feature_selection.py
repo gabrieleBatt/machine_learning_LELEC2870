@@ -4,22 +4,22 @@ from sklearn.feature_selection import mutual_info_regression
 
 from common import *
 
-def discardFeatures(Xn, feature_list):
-	discarded_feats = [column for column,value in feature_list if value < 0.2]
+def discardFeatures(Xn, feature_list, min_value):
+	discarded_feats = [column for column,value in feature_list if value < min_value]
 	
 	Xn = Xn.drop(columns=discarded_feats)
 	return Xn
 
-def selectFeaturesMI(Xn, Y):
+def selectFeaturesMI(Xn, Y, min_value):
 	feature_list = []
 	mutual_info_list = mutual_info_regression(Xn.values, Y.values.T[0])
 	for column in Xn.columns.values:
 		mutual_info = mutual_info_regression(Xn[column].values.reshape(-1,1), Y.values.T[0])
 		feature_list.append((column,mutual_info))
 	
-	return discardFeatures(Xn, feature_list)
+	return discardFeatures(Xn, feature_list, min_value)
 	
-def selectFeaturesCorrelation(Xn, Y):
+def selectFeaturesCorrelation(Xn, Y, min_value):
 	feature_list = []
 	for column in Xn.columns.values:
 		correlation = np.corrcoef(Xn[column].values.T, Y.values.T[0])[0][1]
@@ -27,7 +27,7 @@ def selectFeaturesCorrelation(Xn, Y):
 		
 	feature_list.sort(reverse = True)
 	
-	return discardFeatures(Xn, feature_list)
+	return discardFeatures(Xn, feature_list, min_value)
 	
 def normalizeDate(year, day, month):
 	normalized = []
