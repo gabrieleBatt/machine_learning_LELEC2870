@@ -26,7 +26,7 @@ def makeRBFN(X_selected, Y, parameter_set,  test_dim, val_dim):
 	
 		new_model = RBFN(nb_centers, width_scaling).fit(X_training.values, Y_training.values)
 		
-		new_rmse = RMSE(model.predict(X_test.values), Y_test.values)
+		new_rmse = RMSE(new_model.predict(X_test.values), Y_test.values)
 		
 		if(new_rmse < rmse):
 			rmse = new_rmse
@@ -35,7 +35,7 @@ def makeRBFN(X_selected, Y, parameter_set,  test_dim, val_dim):
 	
 	dump("Parameters:", parameters)
 	
-	dump("Score Linear Model:", model.score(X_test.values, Y_test.values))
-	dump("RMSE Linear Model:", RMSE(model.predict(X_test.values), Y_test.values))
+	dump("Score RBFN Model:", model.score(X_test.values, Y_test.values))
+	dump("RMSE RBFN Model:", RMSE(model.predict(X_test.values), Y_test.values))
 	
 	

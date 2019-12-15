@@ -26,16 +26,16 @@ dump("Normalized:", X1_normalized.columns.values)
 
 ######################################################
 
-X1_selected = selectFeaturesMI(X1_normalized, Y1, 0.7)
+X1_selected = selectFeaturesMI(X1_normalized, Y1, 0.2)
 
 dump("Selected - NLM:", X1_selected.columns.values)
 
 parameter_set = []
-for i in range(10):
-	for j in range(10):
-		parameter_set.append((i,j/20.0))
+for i in range(1,10):
+	for j in np.logspace(-2,2,num=10):
+		parameter_set.append((int(i),j))
 
-linear_model = makeRBFN(X1_selected, Y1, parameter_set, 0.2, 0.3)
+RBFN_model = makeRBFN(X1_selected, Y1, parameter_set, 0.2, 0.3)
 
 ######################################################
 

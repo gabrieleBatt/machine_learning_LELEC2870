@@ -1,11 +1,13 @@
 import numpy as np
-from competitive_learning import get_inits, comp_learning, show_quantization
 from sklearn.linear_model import LinearRegression
+from competitive_learning import *
 
 from common import *
 
+
 class RBFN():
     def __init__(self, nb_centers, width_scaling):
+        dump("New model:", (nb_centers, width_scaling))
         super().__init__()
         self.nb_centers = nb_centers
         self.width_scaling = width_scaling
@@ -13,7 +15,7 @@ class RBFN():
         self.linear_model = LinearRegression()
         
     def fit_centers(self,X):
-        centroid_inits = get_inits(X,self.nb_centers)
+        centroid_inits = np.array(random.sample(X.tolist(), self.nb_centers))
         # c is of shape (nb_centers,X.shape[1])
         self.c = comp_learning(X, centroid_inits, n_epochs=100, alpha=0.1, beta=0.99, min_epsilon=1e-3)
     
@@ -33,6 +35,7 @@ class RBFN():
         self.fit_centers(X)
         self.fit_widths(X)
         self.fit_weights(X,y)
+        return self
     
     def non_linear_transform(self,X):
         '''
