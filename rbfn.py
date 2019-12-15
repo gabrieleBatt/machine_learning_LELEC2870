@@ -7,7 +7,6 @@ from common import *
 
 class RBFN():
     def __init__(self, nb_centers, width_scaling):
-        dump("New model:", (nb_centers, width_scaling))
         super().__init__()
         self.nb_centers = nb_centers
         self.width_scaling = width_scaling
@@ -53,5 +52,4 @@ class RBFN():
         return self.fit(X, y).predict(X)
     
     def score(self, X, y_true):
-        y = self.predict(X)
-        return RMSE(y, y_true)
+        return self.linear_model.score(self.non_linear_transform(X), y_true)
