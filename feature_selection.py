@@ -1,38 +1,29 @@
 import numpy as np
 import pandas as pd
 from sklearn.feature_selection import mutual_info_regression
+from sklearn.decomposition import PCA
 
 from common import *
 
-def discardFeatures(Xn, feature_list, min_value):
-	discarded_feats = [column for column,value in feature_list if value < min_value]
-	
-	Xn = Xn.drop(columns=discarded_feats)
-	return Xn
-
-def selectFeaturesMI(Xn, Y, min_value):
+def selectFeatures(Xn, Y, n_feats, method):
 	feature_list = []
 	mutual_info_list = mutual_info_regression(Xn.values, Y.values.T[0])
 	for column in Xn.columns.values:
-		mutual_info = mutual_info_regression(Xn[column].values.reshape(-1,1), Y.values.T[0])
-		feature_list.append((column,mutual_info))
+		if(method=='MI'):
+			value = mutual_info_regression(Xn[column].values.reshape(-1,1), Y.values.T[0])
+		else if(method == 'CORR').
+			value = np.corrcoef(Xn[column].values.T, Y.values.T[0])[0][1]
+		feature_list.append((column,value))
 	
-	return discardFeatures(Xn, feature_list, min_value)
+	feature_list.sort()
 	
-def selectFeaturesCorrelation(Xn, Y, min_value):
-	feature_list = []
-	for column in Xn.columns.values:
-		correlation = np.corrcoef(Xn[column].values.T, Y.values.T[0])[0][1]
-		feature_list.append((column,np.abs(correlation)))
-		
-	feature_list.sort(reverse = True)
+	return Xn.drop(columns=[column for column,_ in feature_list[n_feats:]])
 	
-	return discardFeatures(Xn, feature_list, min_value)
-	
+
 def normalizeDate(year, day, month):
 	normalized = []
 	for i in range(day.shape[0]):
-		base = {
+		month_base = {
 		1: 0,
 		2: 31,
 		3: 59,
@@ -46,8 +37,8 @@ def normalizeDate(year, day, month):
 		11: 304,
 		12: 334
 		}
-		days = day[i]+base.get(month[i], "Invalid month")
-		if(year[i] == 2016 and month[i] > 2):
+		days = day[i]+month_base.get(month[i], "Invalid month")+(year[i]-2013)*365
+		if(year[i] > 2016 or (year[i] == 2016 and month[i] > 2)):
 			days += 1
 		normalized.append(days)	
 	return normalized
@@ -73,7 +64,7 @@ def normalizeHour(hours):
 	sin = []
 	cos = []
 	for h in hours:
-		angle = 2*np.pi*(h-1)/12
+		angle = 2*np.pi*h/24
 		sin.append(np.sin(angle))
 		cos.append(np.cos(angle))
 	return (sin,cos)
@@ -82,7 +73,7 @@ def normalizeFeatures(X):
 	X = X.drop(columns=STATION)
 	
 	X[NDATE] = normalizeDate(X[YEAR], X[DAY], X[MONTH])
-	X = X.drop(columns=[MONTH,DAY])
+	X = X.drop(columns=[YEAR,MONTH,DAY])
 	
 	X[WDS], X[WDC] = normalizeWindDirection(X[WD])
 	X = X.drop(columns=[WD])
@@ -90,5 +81,10 @@ def normalizeFeatures(X):
 	X[HS], X[HC] = normalizeHour(X[HOUR])
 	X = X.drop(columns=[HOUR])
 	
+	#for column in X.columns:
+	#	mean = np.mean(X[column].values)
+	#	var = np.var(X[column].values)
+	#	X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
+		
 	return X
 	

@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error
 YEAR = 'year'
 MONTH = 'month'  
 DAY = 'day'    
-NDATE = 'normDate'    
+NDATE = 'DATE'    
 HOUR = 'hour'
 HS = 'hourSin'
 HC = 'hourCos'
