@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 from sklearn.feature_selection import mutual_info_regression
-from sklearn.decomposition import PCA
+from sklearn.ensemble import ExtraTreesClassifier
 
 from common import *
+
 
 def selectFeatures(Xn, Y, n_feats, method):
 	feature_list = []
@@ -13,12 +14,11 @@ def selectFeatures(Xn, Y, n_feats, method):
 			value = mutual_info_regression(Xn[column].values.reshape(-1,1), Y.values.T[0])
 		elif(method == 'CORR'):
 			value = np.corrcoef(Xn[column].values.T, Y.values.T[0])[0][1]
-		feature_list.append((column,value))
+		feature_list.append((column,np.abs(value)))
 	
-	feature_list.sort()
+	feature_list.sort(key=lambda x: x[1], reverse=True)
 	
-	return Xn.drop(columns=[column for column,_ in feature_list[n_feats:]])
-	
+	return Xn.drop(columns=[column for column,_ in feature_list[n_feats:]])	
 
 def normalizeDate(year, day, month):
 	normalized = []
@@ -40,6 +40,7 @@ def normalizeDate(year, day, month):
 		days = day[i]+month_base.get(month[i], "Invalid month")+(year[i]-2013)*365
 		if(year[i] > 2016 or (year[i] == 2016 and month[i] > 2)):
 			days += 1
+	
 		normalized.append(days)	
 	return normalized
 	
@@ -78,13 +79,13 @@ def normalizeFeatures(X):
 	X[WDS], X[WDC] = normalizeWindDirection(X[WD])
 	X = X.drop(columns=[WD])
 	
-	X[HS], X[HC] = normalizeHour(X[HOUR])
+	#X[HS], X[HC] = normalizeHour(X[HOUR])
 	X = X.drop(columns=[HOUR])
 	
-	#for column in X.columns:
-	#	mean = np.mean(X[column].values)
-	#	var = np.var(X[column].values)
-	#	X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
+	for column in X.columns:
+		mean = np.mean(X[column].values)
+		var = np.var(X[column].values)
+		X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
 		
 	return X
 	
