@@ -43,11 +43,12 @@ if(do_all or '-vf' in options):
 ######################################################
 
 if(do_all or '-lm' in options or '-m' in options):
-	X1_selected = selectFeatures(X1_normalized, Y1, 4, 'CORR')
+	X1_selected = selectFeatures(X1_normalized, Y1, 5, 'CORR')
 
 	dump("Selected - LM:", X1_selected.columns.values)
 
-	linear_model = makeLinearModel(X1_selected, Y1, 0.2)
+	rmse = myLinearModel(X1_selected, Y1, 0.2, 0).test()
+	dump("RMSE test Linear Model:", rmse)
 
 ######################################################
 
@@ -64,7 +65,7 @@ if(do_all or '-knn' in options or '-m' in options):
 
 if(do_all or '-rbfn' in options or '-m' in options):
 
-	X1_selected = selectFeatures(X1_normalized, Y1, 4, 'MI')
+	X1_selected = selectFeatures(X1_normalized, Y1, 14, 'MI')
 
 	dump("Selected - RBFN:", X1_selected.columns.values)
 
@@ -79,15 +80,34 @@ if(do_all or '-rbfn' in options or '-m' in options):
 
 ######################################################
 
-if(do_all or '-mlp' in options or '-m' in options):
+if(do_all or '-wmlp' in options or '-m' in options):
 
-	X1_selected = selectFeatures(X1_normalized, Y1, 4, 'MI')
-
-	dump("Selected - MLP:", X1_selected.columns.values)
-
-	parameter_set = [14]
-
-	MLP_model = makeMLP(X1_selected, Y1, parameter_set, 0.1, 0.1)
+	parameter_set = [i for i in range(10,20)]
+	
+	features_queque = selectFeatures(X1_normalized, Y1, len(X1_normalized.columns), 'MI')
+	
+	feats_selected = []
+	rmse_min = 1000
+	while(len(features_queque) != 0):
+		new_feat = None
+		for feat in features_queque:
+			feats_temp = feats_selected + [feat]
+			rmse = myMLP(X1_normalized[feats_temp], Y1, parameter_set, 0.2, 0.2).validate()
+			if(rmse < rmse_min):
+				rmse_min = rmse
+				new_feat = feat
+		if new_feat is not None:
+			feats_selected = feats_selected + [new_feat]
+			features_queque.drop(columns=[new_feat])
+		else: 
+			break
+	
+	
+	dump("Final selection - WMLP:", feats_selected)	
+	MLP_model = myMLP(X1_normalized[feats_selected], Y1, parameter_set, 0.2, 0.2)
+	rmse = MLP_model.test()
+	dump("Parameter: ", MLP_model.getParameter())
+	dump("MLP test Linear Model:", rmse)
 
 ######################################################
 
@@ -95,14 +115,24 @@ if(do_all or '-wlm' in options or '-wm' in options):
 	
 	features_queque = selectFeatures(X1_normalized, Y1, len(X1_normalized.columns), 'CORR')
 	
-	X1_selected = []
-	
+	feats_selected = []
+	rmse_min = 1000
 	while(len(features_queque) != 0):
-	
+		new_feat = None
 		for feat in features_queque:
-			
-			dump("Selected - LM:", X1_selected.columns.values)
-
-			linear_model = makeLinearModel(X1_selected, Y1, 0.2)
+			feats_temp = feats_selected + [feat]
+			rmse = myLinearModel(X1_normalized[feats_temp], Y1, 0.2, 0.2).validate()
+			if(rmse < rmse_min):
+				rmse_min = rmse
+				new_feat = feat
+		if new_feat is not None:
+			feats_selected = feats_selected + [new_feat]
+			features_queque.drop(columns=[new_feat])
+		else: 
+			break
+	
+	dump("Final selection - WLM:", feats_selected)
+	rmse = myLinearModel(X1_normalized[feats_selected], Y1, 0.1, 0.2).test()
+	dump("RMSE test Linear Model:", rmse)
 
 ######################################################

@@ -11,7 +11,7 @@ def selectFeatures(Xn, Y, n_feats, method):
 	for column in Xn.columns.values:
 		if(method=='MI'):
 			value = mutual_info_regression(Xn[column].values.reshape(-1,1), Y.values.T[0])
-		else if(method == 'CORR').
+		elif(method == 'CORR'):
 			value = np.corrcoef(Xn[column].values.T, Y.values.T[0])[0][1]
 		feature_list.append((column,value))
 	
