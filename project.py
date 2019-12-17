@@ -42,24 +42,21 @@ if(do_all or '-lm' in options or '-m' in options):
 
 if(do_all or '-wlm' in options or '-wm' in options):
 	
-	features_queque = selectFeatures(X1_normalized, Y1, len(X1_normalized.columns), 'CORR')
-	
-	feats_selected = []
-	rmse_min = 1000
-	while(len(feats_selected) <= 5):
-		new_feat = None
-		for feat in features_queque:
-			feats_temp = feats_selected + [feat]
-			rmse = myLinearModel(X1_normalized[feats_temp], Y1, 0.2, 0.2).validate()
-			if(rmse < rmse_min):
-				rmse_min = rmse
-				new_feat = feat
-		if new_feat is not None:
-			feats_selected = feats_selected + [new_feat]
-			features_queque.drop(columns=[new_feat])
-		else: 
-			break
-	
+	features = selectFeatures(X1_normalized, Y1, len(X1_normalized.columns), 'CORR').columns.values
+	print(features)
+	rmse = 1000
+	feats_selected = features[:4]
+	for i1 in range(len(features)-3):
+		for i2 in range(i1+1,len(features)-2):
+			for i3 in range(i2+1,len(features)-1):
+				for i4 in range(i3+1,len(features)):
+					sys.stdout.write("\rProgress: %d, %d, %d, %d" % (i1,i2,i3,i4))
+					new_feats = [features[i1], features[i2	], features[i3], features[i4]]
+					new_rmse = myLinearModel(X1_normalized[new_feats], Y1, 0.1, 0.1).validate()
+					if(new_rmse < rmse):
+						rmse = new_rmse
+						feats_selected = new_feats
+	print("")
 	dump("Selected - WLM:", feats_selected)
 	rmse = myLinearModel(X1_normalized[feats_selected], Y1, 0.1, 0.2).test()
 	dump("RMSE test Linear Model:", rmse)
