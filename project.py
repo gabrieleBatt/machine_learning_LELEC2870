@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import random
+import pandas as pd
 ######################################################
 from common import *
 from feature_selection import *
@@ -24,41 +25,79 @@ X1, Y1 = readData()
 
 X1_normalized, Y1_normalized = normalizeFeatures(X1, Y1)
 
-X1_final_training, Y1_final_training, X1_test, Y1_test = divideSets(X1_normalized, Y1_normalized)
+n_station = len(set(X1_normalized[STATION].values))
 
-X1_validation_training, Y1_validation_training, X1_validation, Y1_validation = divideSets(X1_final_training, Y1_final_training)
+X1_per_station_set = [pd.DataFrame(columns=X1_normalized.columns.values) for _ in range(len(X1_normalized.columns))]
+Y1_per_station_set = [pd.DataFrame(columns=[PM25]) for _ in range(len(X1_normalized.columns))]
 
-X1_sets = (X1_final_training, X1_test, X1_validation_training, X1_validation)
-Y1_sets = (Y1_final_training, Y1_test, Y1_validation_training, Y1_validation)
+for i,station in enumerate(X1_normalized[STATION].values):
+	X1_per_station_set[station].loc[i] = X1_normalized.values[i]
+	Y1_per_station_set[station].loc[i] = Y1_normalized.values[i]
+
+for i in range(n_station):
+	index = [i for i in range(len(X1_per_station_set[i]))]
+	X1_per_station_set[i] = X1_per_station_set[i].reindex(index, method='backfill')
+	Y1_per_station_set[i] = Y1_per_station_set[i].reindex(index, method='backfill')
+	
+X1_sets = []
+Y1_sets = []
+for i in range(n_station):
+	X1_test_training, Y1_test_training, X1_test, Y1_test = divideSets(X1_per_station_set[i], Y1_per_station_set[i])
+	
+	X1_validation_training, Y1_validation_training, X1_validation, Y1_validation = divideSets(X1_test_training, Y1_test_training)
+
+	X1_sets.append((X1_test_training,X1_test,X1_validation_training, X1_validation))
+	Y1_sets.append((Y1_test_training,Y1_test,Y1_validation_training, Y1_validation))		
 
 ######################################################
-
-
-
 ######################################################
 
 if(do_all or '-lm' in options or '-m' in options):
-	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 6, 'CORR').columns.values
+	
+	model_per_station = []
+	for station in range(n_station):
+		feats_selected = selectFeatures(X1_per_station_set[station], Y1_per_station_set[station], 4, 'CORR').columns.values
 
-	dump("Selected - LM:", feats_selected)
-
-	rmse = myLinearModel(X1_sets, Y1_sets, feats_selected).test()
-	dump("RMSE test Linear Model:", rmse)
+		model = myLinearModel(X1_sets[station][0], Y1_sets[station][0], feats_selected)
+		
+		model_per_station.append(model)
+		
+		
+	predictions = []
+	actual = []
+	for station in range(n_station):
+		for element in model_per_station[station].predict(X1_sets[station][1]):
+			predictions.append(element[0])
+		for element in Y1_sets[station][1].values:
+			actual.append(element[0])
+	
+	dump("RMSE test Linear Model:", RMSE(actual,predictions))
 
 
 ######################################################
 
 if(do_all or '-mlp' in options or '-m' in options):
 
-	parameter_set = [i for i in range(7,8)]
+	parameter_set = [i for i in range(5,30)]
 	
-	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 5, 'MI').columns.values
+	model_per_station = []
+	for station in range(n_station):
+		feats_selected = selectFeatures(X1_per_station_set[station], Y1_per_station_set[station], 4, 'MI').columns.values
+
+		model = myLinearModel(X1_sets[station][0], Y1_sets[station][0], feats_selected)
+		
+		model_per_station.append(model)
+		
+		
+	predictions = []
+	actual = []
+	for station in range(n_station):
+		for element in model_per_station[station].predict(X1_sets[station][1]):
+			predictions.append(element[0])
+		for element in Y1_sets[station][1].values:
+			actual.append(element[0])
 	
-	dump("Selected - MLP:", feats_selected)	
-	MLP_model = myMLP(X1_sets, Y1_sets, parameter_set, feats_selected)
-	rmse = MLP_model.test()
-	dump("Parameter: ", MLP_model.getParameter())
-	dump("MLP test Linear Model:", rmse)
+	dump("RMSE MLP:", RMSE(actual,predictions))
 
 ######################################################
 

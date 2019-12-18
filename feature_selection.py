@@ -8,7 +8,7 @@ from common import *
 
 def selectFeatures(Xn, Y, n_feats, method):
 	feature_list = []
-	mutual_info_list = mutual_info_regression(Xn.values, Y.values.T[0])
+	Xn = Xn.drop(columns=[STATION])
 	for column in Xn.columns.values:
 		if(method=='MI'):
 			value = mutual_info_regression(Xn[column].values.reshape(-1,1), Y.values.T[0])
@@ -73,13 +73,14 @@ def normalizeHour(hours):
 	
 def normalizeFeatures(X, Y):
 	#for i,tuple in enumerate(X.values):
-	#	if tuple[-1] != 0:
+	#	if tuple[-1] != 5:
 	#		X = X.drop([i],axis=0)
 	#		Y = Y.drop([i], axis=0)
 	#index = [i for i in range(X.shape[0])]
 	#X = X.reindex(index, method='backfill')
 	#Y = Y.reindex(index, method='backfill')
 	#X = X.drop(columns=STATION)
+	#X[STATION] = [0 for i in index]
 	
 	X[NDATE] = normalizeDate(X[YEAR], X[DAY], X[MONTH])
 	X = X.drop(columns=[YEAR,MONTH,DAY])
@@ -91,9 +92,10 @@ def normalizeFeatures(X, Y):
 	X = X.drop(columns=[HOUR])
 	
 	for column in X.columns:
-		mean = np.mean(X[column].values)
-		var = np.var(X[column].values)
-		X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
+		if column != STATION:
+			mean = np.mean(X[column].values)
+			var = np.var(X[column].values)
+			X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
 		
 	return (X,Y)
 	
