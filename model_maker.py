@@ -5,13 +5,35 @@ from sklearn.neural_network import MLPRegressor
 from common import *
 
 class myLinearModel():
-	def __init__(self, X_selected, Y, test_dim, val_dim):
-		self.X_final_training, self.Y_final_training, self.X_test, self.Y_test = divideSets(X_selected, Y, test_dim)
-	
-		self.X_training, self.Y_training, self.X_validation, self.Y_validation = divideSets(self.X_final_training, self.Y_final_training, val_dim)
-	
+	def __init__(self, X_sets, Y_sets, feats):
+		self feats = feats
+		self.X_final_training = X_sets[0]
+		self.Y_final_training = Y_sets[0]
+		self.X_test = X_sets[1][feats]
+		self.Y_test = Y_sets[1]
+		
+		self.X_training = X_sets[2]
+		self.Y_training = Y_sets[2]
+		self.X_validation = X_sets[3]
+		self.Y_validation = Y_sets[3]
+		
+		models = []
+		
+		for i,tuple in enumerate(X.values):
+			if tuple[-1] != 0:
+				X = X.drop([i],axis=0)
+				Y = Y.drop([i], axis=0)
+		index = [i for i in range(X.shape[0])]
+		X = X.reindex(index, method='backfill')
+		Y = Y.reindex(index, method='backfill')
+		X = X.drop(columns=STATION)
+		
+		
 		self.model = LinearRegression().fit(self.X_training.values, self.Y_training.values)
-
+		
+	def predict():
+		
+		
 	def dumpScore(self):
 		dump("Score Linear Model:", self.model.score(self.X_validation.values, self.Y_validation.values))
 		return self
@@ -24,14 +46,23 @@ class myLinearModel():
 		rmse = RMSE(self.model.predict(self.X_test.values), self.Y_test.values)
 		return rmse
 	
-	def getModel():
+	def getModel(self):
 		return self.model
+		
+	def getFeats(self):
+		return self.feats
 	
 class myKNN():
-	def __init__(self, X_selected, Y, k_set,  test_dim, val_dim):
-		self.X_final_training, self.Y_final_training, self.X_test, self.Y_test = divideSets(X_selected, Y, test_dim)
-	
-		self.X_training, self.Y_training, self.X_validation, self.Y_validation = divideSets(self.X_final_training, self.Y_final_training, val_dim)
+	def __init__(self, X_sets, Y_sets, k_set, feats):
+		self.X_final_training = X_sets[0][feats]
+		self.Y_final_training = Y_sets[0]
+		self.X_test = X_sets[1][feats]
+		self.Y_test = Y_sets[1]
+		
+		self.X_training = X_sets[2][feats]
+		self.Y_training = Y_sets[2]
+		self.X_validation = X_sets[3][feats]
+		self.Y_validation = Y_sets[3]
 	
 		rmse = 1000
 		for n_n in k_set:
@@ -67,10 +98,16 @@ class myKNN():
 
 	
 class myMLP():
-	def __init__(self, X_selected, Y, parameter_set,  test_dim, val_dim):
-		self.X_final_training, self.Y_final_training, self.X_test, self.Y_test = divideSets(X_selected, Y, test_dim)
-	
-		self.X_training, self.Y_training, self.X_validation, self.Y_validation = divideSets(self.X_final_training, self.Y_final_training, val_dim)
+	def __init__(self,  X_sets, Y_sets, parameter_set, feats):
+		self.X_final_training = X_sets[0][feats]
+		self.Y_final_training = Y_sets[0]
+		self.X_test = X_sets[1][feats]
+		self.Y_test = Y_sets[1]
+		
+		self.X_training = X_sets[2][feats]
+		self.Y_training = Y_sets[2]
+		self.X_validation = X_sets[3][feats]
+		self.Y_validation = Y_sets[3]
 
 		rmse = 1000
 		for hidden_layer_units in parameter_set:
@@ -93,7 +130,7 @@ class myMLP():
 		return rmse
 	
 	def test(self):
-		self.model = MLPRegressor((self.parameter,self.parameter), activation='relu', max_iter=10000).fit(self.X_final_training.values, self.Y_final_training.values.ravel())
+		self.model = MLPRegressor((self.parameter,), activation='relu', max_iter=100000).fit(self.X_final_training.values, self.Y_final_training.values.ravel())
 		rmse = RMSE(self.model.predict(self.X_test.values), self.Y_test.values)
 		return rmse
 		

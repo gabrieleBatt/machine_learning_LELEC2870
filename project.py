@@ -13,53 +13,38 @@ from sklearn.feature_selection import mutual_info_regression
 
 ######################################################
 
-do_all = (len(sys.argv) == 1)
 options = sys.argv[1:]
-if(not do_all):
-	dump("Options: ", options)
+dump("Options: ", options)
+
+do_all = ('-all' in options)
 
 ######################################################
 
 X1, Y1 = readData()
 
-X1_normalized = normalizeFeatures(X1)
+X1_normalized, Y1_normalized = normalizeFeatures(X1, Y1)
 
-dump("Normalized:", X1_normalized.columns.values)
+X1_final_training, Y1_final_training, X1_test, Y1_test = divideSets(X1_normalized, Y1_normalized)
+
+X1_validation_training, Y1_validation_training, X1_validation, Y1_validation = divideSets(X1_final_training, Y1_final_training)
+
+X1_sets = (X1_final_training, X1_test, X1_validation_training, X1_validation)
+Y1_sets = (Y1_final_training, Y1_test, Y1_validation_training, Y1_validation)
 
 ######################################################
+
+
+
 ######################################################
 
 if(do_all or '-lm' in options or '-m' in options):
-	X1_selected = selectFeatures(X1_normalized, Y1, 4, 'CORR')
+	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 6, 'CORR').columns.values
 
-	dump("Selected - LM:", X1_selected.columns.values)
+	dump("Selected - LM:", feats_selected)
 
-	rmse = myLinearModel(X1_selected, Y1, 0.2, 0).test()
+	rmse = myLinearModel(X1_sets, Y1_sets, feats_selected).test()
 	dump("RMSE test Linear Model:", rmse)
 
-
-######################################################
-
-if(do_all or '-wlm' in options or '-wm' in options):
-	
-	features = selectFeatures(X1_normalized, Y1, len(X1_normalized.columns), 'CORR').columns.values
-	print(features)
-	rmse = 1000
-	feats_selected = features[:4]
-	for i1 in range(len(features)-3):
-		for i2 in range(i1+1,len(features)-2):
-			for i3 in range(i2+1,len(features)-1):
-				for i4 in range(i3+1,len(features)):
-					sys.stdout.write("\rProgress: %d, %d, %d, %d" % (i1,i2,i3,i4))
-					new_feats = [features[i1], features[i2	], features[i3], features[i4]]
-					new_rmse = myLinearModel(X1_normalized[new_feats], Y1, 0.1, 0.1).validate()
-					if(new_rmse < rmse):
-						rmse = new_rmse
-						feats_selected = new_feats
-	print("")
-	dump("Selected - WLM:", feats_selected)
-	rmse = myLinearModel(X1_normalized[feats_selected], Y1, 0.1, 0.2).test()
-	dump("RMSE test Linear Model:", rmse)
 
 ######################################################
 
@@ -67,41 +52,10 @@ if(do_all or '-mlp' in options or '-m' in options):
 
 	parameter_set = [i for i in range(7,8)]
 	
-	X1_selected = selectFeatures(X1_normalized, Y1, 5, 'MI')
+	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 5, 'MI').columns.values
 	
-	dump("Selected - MLP:", X1_selected.columns.values)	
-	MLP_model = myMLP(X1_selected, Y1, parameter_set, 0.2, 0.2)
-	rmse = MLP_model.test()
-	dump("Parameter: ", MLP_model.getParameter())
-	dump("MLP test Linear Model:", rmse)
-
-######################################################
-
-if(do_all or '-wmlp' in options or '-m' in options):
-
-	parameter_set = [i for i in range(14,15)]
-	
-	features_queque = selectFeatures(X1_normalized, Y1, len(X1_normalized.columns), 'MI')
-	
-	feats_selected = []
-	rmse_min = 1000
-	while(len(feats_selected) <= 5):
-		new_feat = None
-		for feat in features_queque.columns:
-			feats_temp = feats_selected + [feat]
-			rmse = myMLP(X1_normalized[feats_temp], Y1, parameter_set, 0.2, 0.2).validate()
-			if(rmse < rmse_min):
-				rmse_min = rmse
-				new_feat = feat
-		if new_feat is not None:
-			feats_selected = feats_selected + [new_feat]
-			features_queque = features_queque.drop(columns=[new_feat])
-		else: 
-			break
-	
-	
-	dump("Selected - WMLP:", feats_selected)	
-	MLP_model = myMLP(X1_normalized[feats_selected], Y1, parameter_set, 0.2, 0.2)
+	dump("Selected - MLP:", feats_selected)	
+	MLP_model = myMLP(X1_sets, Y1_sets, parameter_set, feats_selected)
 	rmse = MLP_model.test()
 	dump("Parameter: ", MLP_model.getParameter())
 	dump("MLP test Linear Model:", rmse)
@@ -109,13 +63,13 @@ if(do_all or '-wmlp' in options or '-m' in options):
 ######################################################
 
 if(do_all or '-knn' in options or '-m' in options):
-	X1_selected = selectFeatures(X1_normalized, Y1, 4, 'MI')
+	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 4, 'MI').columns.values
 
-	dump("Selected - KNN:", X1_selected.columns.values)
+	dump("Selected - KNN:", feats_selected)
 
 	k_set = [i for i in range(10,100)]
 	
-	KNN_model = myKNN(X1_selected, Y1, k_set, 0.2, 0.2)
+	KNN_model = myKNN(X1_sets, Y1_sets, k_set, feats_selected)
 	rmse = KNN_model.test()
 	dump("K:", KNN_model.getK())
 	dump("RMSE KNN Model:", rmse)
@@ -125,7 +79,7 @@ if(do_all or '-knn' in options or '-m' in options):
 if(do_all or '-data' in options or '-avg' in options or '-var' in options or '-plot' in options):
 	plt.figure(0)
 	n_feats = len(X1_normalized.columns)
-	y = Y1.values
+	y = Y1_normalized.values
 	for i,column in enumerate(X1_normalized):
 		x = X1_normalized[column].values
 		plt.subplot(1+(n_feats/4), 4, i+1)
@@ -162,10 +116,10 @@ if (do_all or '-filter' in options or '-f' in options):
 	names = X1_normalized.columns.values
 	corr = []
 	for column in X1_normalized.columns.values:
-		corr = corr + [np.abs(np.corrcoef(X1_normalized[column].values.T, Y1.values.T[0])[0][1])]
+		corr = corr + [np.abs(np.corrcoef(X1_normalized[column].values.T, Y1_normalized.values.T[0])[0][1])]
 	mis = []
 	for column in X1_normalized.columns.values:
-		mis = mis + [np.abs(mutual_info_regression(X1_normalized[column].values.reshape(-1,1), Y1.values.T[0])[0])]
+		mis = mis + [np.abs(mutual_info_regression(X1_normalized[column].values.reshape(-1,1), Y1_normalized.values.T[0])[0])]
 	
 	plt.figure(1)
 	plt.subplot(121)

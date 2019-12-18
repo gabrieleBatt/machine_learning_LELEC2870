@@ -69,9 +69,17 @@ def normalizeHour(hours):
 		sin.append(np.sin(angle))
 		cos.append(np.cos(angle))
 	return (sin,cos)
+
 	
-def normalizeFeatures(X):
-	X = X.drop(columns=STATION)
+def normalizeFeatures(X, Y):
+	#for i,tuple in enumerate(X.values):
+	#	if tuple[-1] != 0:
+	#		X = X.drop([i],axis=0)
+	#		Y = Y.drop([i], axis=0)
+	#index = [i for i in range(X.shape[0])]
+	#X = X.reindex(index, method='backfill')
+	#Y = Y.reindex(index, method='backfill')
+	#X = X.drop(columns=STATION)
 	
 	X[NDATE] = normalizeDate(X[YEAR], X[DAY], X[MONTH])
 	X = X.drop(columns=[YEAR,MONTH,DAY])
@@ -87,5 +95,5 @@ def normalizeFeatures(X):
 		var = np.var(X[column].values)
 		X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
 		
-	return X
+	return (X,Y)
 	

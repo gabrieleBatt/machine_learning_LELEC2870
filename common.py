@@ -25,7 +25,7 @@ STATION = 'station'
 PM25 = 'PM2.5'
 
 def dump(str, obj):
-	print("-----------------------------------------------------------------------------------")
+	print("--------------------------------------------------------------------------------------")
 	print(str, obj)
 
 	
@@ -33,16 +33,16 @@ def RMSE(Y_actual, Y_predicted):
 	return math.sqrt(mean_squared_error(Y_actual, Y_predicted))
 	
 	
-def divideSets(X, Y, ratio):
-		id_set = list(X.index)
-		random.Random(0).shuffle(id_set)
+def divideSets(X, Y):
+		small_id_set = [i for i in range(0,len(list(X.index)),5)]
+		big_id_set = [i for i in range(0,len(list(X.index))) if i not in small_id_set]
+
+		index = [i for i in range(len(small_id_set))]
+		X_s =  X.drop(small_id_set,axis=0).reindex(index, method='backfill')
+		Y_s =  Y.drop(small_id_set,axis=0).reindex(index, method='backfill')
+
 		
-		test_id_set = id_set[:int(X.shape[0]*ratio)]
-		training_id_set = id_set[int(X.shape[0]*ratio):]
-
-		X_training =  X.drop(test_id_set,axis=0)
-		Y_training =  Y.drop(test_id_set,axis=0)
-
-		X_test = X.drop(training_id_set,axis=0)
-		Y_test = Y.drop(training_id_set,axis=0)
-		return (X_training, Y_training, X_test, Y_test)
+		index = [i for i in range(len(big_id_set))]
+		X_b = X.drop(big_id_set,axis=0).reindex(index, method='backfill')
+		Y_b = Y.drop(big_id_set,axis=0).reindex(index, method='backfill')
+		return (X_b, Y_b, X_s, Y_s)
