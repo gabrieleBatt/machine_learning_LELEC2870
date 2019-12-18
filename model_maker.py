@@ -6,33 +6,18 @@ from common import *
 
 class myLinearModel():
 	def __init__(self, X_sets, Y_sets, feats):
-		self feats = feats
-		self.X_final_training = X_sets[0]
+		self.X_final_training = X_sets[0][feats]
 		self.Y_final_training = Y_sets[0]
 		self.X_test = X_sets[1][feats]
 		self.Y_test = Y_sets[1]
 		
-		self.X_training = X_sets[2]
+		self.X_training = X_sets[2][feats]
 		self.Y_training = Y_sets[2]
-		self.X_validation = X_sets[3]
+		self.X_validation = X_sets[3][feats]
 		self.Y_validation = Y_sets[3]
-		
-		models = []
-		
-		for i,tuple in enumerate(X.values):
-			if tuple[-1] != 0:
-				X = X.drop([i],axis=0)
-				Y = Y.drop([i], axis=0)
-		index = [i for i in range(X.shape[0])]
-		X = X.reindex(index, method='backfill')
-		Y = Y.reindex(index, method='backfill')
-		X = X.drop(columns=STATION)
-		
+	
 		
 		self.model = LinearRegression().fit(self.X_training.values, self.Y_training.values)
-		
-	def predict():
-		
 		
 	def dumpScore(self):
 		dump("Score Linear Model:", self.model.score(self.X_validation.values, self.Y_validation.values))
@@ -45,12 +30,7 @@ class myLinearModel():
 		self.model = LinearRegression().fit(self.X_final_training.values, self.Y_final_training.values)
 		rmse = RMSE(self.model.predict(self.X_test.values), self.Y_test.values)
 		return rmse
-	
-	def getModel(self):
-		return self.model
-		
-	def getFeats(self):
-		return self.feats
+
 	
 class myKNN():
 	def __init__(self, X_sets, Y_sets, k_set, feats):

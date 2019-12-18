@@ -50,7 +50,7 @@ if(do_all or '-lm' in options or '-m' in options):
 
 if(do_all or '-mlp' in options or '-m' in options):
 
-	parameter_set = [i for i in range(7,8)]
+	parameter_set = [i for i in range(50,200)]
 	
 	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 5, 'MI').columns.values
 	
