@@ -6,7 +6,6 @@ import random
 ######################################################
 from common import *
 from feature_selection import *
-from data_handler import *
 from model_maker import *
 from sklearn.feature_selection import mutual_info_regression
 
@@ -38,7 +37,7 @@ Y1_sets = (Y1_final_training, Y1_test, Y1_validation_training, Y1_validation)
 ######################################################
 
 if(do_all or '-lm' in options or '-m' in options):
-	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 6, 'CORR').columns.values
+	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 5, 'CORR').columns.values
 
 	dump("Selected - LM:", feats_selected)
 
@@ -50,7 +49,7 @@ if(do_all or '-lm' in options or '-m' in options):
 
 if(do_all or '-mlp' in options or '-m' in options):
 
-	parameter_set = [i for i in range(50,200)]
+	parameter_set = [i for i in range(16,17)]
 	
 	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 5, 'MI').columns.values
 	
@@ -63,7 +62,7 @@ if(do_all or '-mlp' in options or '-m' in options):
 ######################################################
 
 if(do_all or '-knn' in options or '-m' in options):
-	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 4, 'MI').columns.values
+	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 5, 'MI').columns.values
 
 	dump("Selected - KNN:", feats_selected)
 

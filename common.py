@@ -1,6 +1,7 @@
 import math
 import random
 from sklearn.metrics import mean_squared_error
+import pandas as pd
 
 YEAR = 'year'
 MONTH = 'month'  
@@ -46,3 +47,8 @@ def divideSets(X, Y):
 		X_b = X.drop(big_id_set,axis=0).reindex(index, method='backfill')
 		Y_b = Y.drop(big_id_set,axis=0).reindex(index, method='backfill')
 		return (X_b, Y_b, X_s, Y_s)
+		
+def readData():
+	X1 = pd.read_csv("X1.csv")
+	Y1 = pd.read_csv("Y1.csv",header=None,names=[PM25])
+	return (X1, Y1)

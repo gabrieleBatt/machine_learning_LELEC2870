@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_selection import mutual_info_regression
 from sklearn.ensemble import ExtraTreesClassifier
+from scipy import stats
 
 from common import *
 
@@ -70,6 +71,18 @@ def normalizeHour(hours):
 		cos.append(np.cos(angle))
 	return (sin,cos)
 
+def removeOutliers(X, Y):
+	df = X.copy()
+	df[PM25]=Y[PM25].values
+	z = np.abs(stats.zscore(df))
+	outliers = set(np.where(z > 3)[0])
+	dump("Removing outliers:", len(outliers)) 
+	X = X.drop(outliers,axis=0)
+	Y = Y.drop(outliers,axis=0)
+	index = [i for i in range(X.shape[0])]
+	X = X.reindex(index, method='backfill')
+	Y = Y.reindex(index, method='backfill')
+	return (X,Y)
 	
 def normalizeFeatures(X, Y):
 	#for i,tuple in enumerate(X.values):
@@ -79,7 +92,7 @@ def normalizeFeatures(X, Y):
 	#index = [i for i in range(X.shape[0])]
 	#X = X.reindex(index, method='backfill')
 	#Y = Y.reindex(index, method='backfill')
-	#X = X.drop(columns=STATION)
+	X = X.drop(columns=STATION)
 	
 	X[NDATE] = normalizeDate(X[YEAR], X[DAY], X[MONTH])
 	X = X.drop(columns=[YEAR,MONTH,DAY])
@@ -87,13 +100,15 @@ def normalizeFeatures(X, Y):
 	X[WDS], X[WDC] = normalizeWindDirection(X[WD])
 	X = X.drop(columns=[WD])
 	
-	#X[HS], X[HC] = normalizeHour(X[HOUR])
+	X[HS], X[HC] = normalizeHour(X[HOUR])
 	X = X.drop(columns=[HOUR])
 	
 	for column in X.columns:
 		mean = np.mean(X[column].values)
 		var = np.var(X[column].values)
 		X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
+		
+	X,Y = removeOutliers(X,Y)
 		
 	return (X,Y)
 	
