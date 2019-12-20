@@ -16,7 +16,7 @@ do_all = ('-all' in options)
 
 ######################################################
 
-X1, Y1 = readData()
+X1, Y1, X2 = readData()
 
 #The normalized data contains the manipulated features as explained in section 1 of the report(Feature selection)
 #returns the normalized data frames of input and output, 
@@ -51,6 +51,19 @@ X1_sets = (X1_test_training, X1_test, X1_validation_training, X1_validation)
 Y1_sets = (Y1_test_training, Y1_test, Y1_validation_training, Y1_validation)
 
 ######################################################
+
+if('--prediction' in options and len(options)==1):
+	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 4, 'CORR', dummy_vars)
+	dump("Selected - KNN:", feats_selected)
+	k_set = [16]
+	KNN_model = myKNN(X1_sets, Y1_sets, k_set, feats_selected)
+	KNN_model.test()
+	X2_normalized = normalizeInput(X2)
+	Y2 = KNN_model.predict(X2_normalized)
+	
+	writeData(Y2)
+
+######################################################
 #The following code is divided in blocks
 #Each block is activated by command line argument
 ######################################################
@@ -59,12 +72,26 @@ Y1_sets = (Y1_test_training, Y1_test, Y1_validation_training, Y1_validation)
 #Uses a training set and test set
 #Trains a linear regression model and tests it
 if(do_all or '-lm' in options or '-m' in options):
-	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 4, 'CORR',dummy_vars)
+	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 4, 'CORR', dummy_vars)
 
 	dump("Selected - LM:", feats_selected)
 
-	rmse = myLinearModel(X1_sets, Y1_sets, feats_selected).test()
-	dump("RMSE test Linear Model:", rmse)
+	rmse, prediction_set = myLinearModel(X1_sets, Y1_sets, feats_selected).test()
+	dump("RMSE Linear Model:", rmse)
+	
+	plt.figure(20)
+	x = [i for i in range(50)]
+	y = Y1_test.values[:50]
+	plt.subplot(121)
+	plt.scatter(x, y, alpha=0.5)
+	plt.scatter(x, prediction_set[:50], alpha=0.5)
+	plt.title('Prediction')
+	plt.ylabel(PM25)
+	plt.subplot(122)
+	plt.plot(x, (y-prediction_set[:50])**2, 'r--')
+	plt.title('MSE')
+	plt.ylabel(PM25)
+	
 
 
 ######################################################
@@ -82,12 +109,25 @@ if(do_all or '-knn' in options or '-m' in options):
 	k_set = [i for i in range(1,50)]
 	
 	KNN_model = myKNN(X1_sets, Y1_sets, k_set, feats_selected)
-	rmse = KNN_model.test()
+	rmse, prediction_set = KNN_model.test()
 	dump("RMSE KNN Model:", rmse)
 	
 	rmse_list = KNN_model.getHistory()
-	plt.figure(21)
+	plt.figure(30)
 	plt.plot(k_set,rmse_list)
+	
+	plt.figure(31)
+	x = [i for i in range(50)]
+	y = Y1_test.values[:50]
+	plt.subplot(121)
+	plt.scatter(x, y, alpha=0.5)
+	plt.scatter(x, prediction_set[:50], alpha=0.5)
+	plt.title('Prediction')
+	plt.ylabel(PM25)
+	plt.subplot(122)
+	plt.plot(x, (y-prediction_set[:50])**2, 'r--')
+	plt.title('MSE')
+	plt.ylabel(PM25)
 	
 ######################################################
 
@@ -98,17 +138,17 @@ if(do_all or '-knn' in options or '-m' in options):
 #After having selected the best number of nodes in the hidden, it trains it again and tests it
 if(do_all or '-mlp' in options or '-m' in options):
 
-	parameter_set = [i for i in range(150,250)]
+	parameter_set = [i for i in range(10,50)]
 	
 	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 4, 'MI', dummy_vars)
 	
 	dump("Selected - MLP:", feats_selected)	
 	MLP_model = myMLP(X1_sets, Y1_sets, parameter_set, feats_selected)
 	rmse = MLP_model.test()
-	dump("MLP test Linear Model:", rmse)
+	dump("RMSE MLP model:", rmse)
 	
 	rmse_list = MLP_model.getHistory()
-	plt.figure(22)
+	plt.figure(40)
 	plt.plot(parameter_set,rmse_list)
 	
 ######################################################

@@ -18,12 +18,14 @@ class myLinearModel():
 	
 	def test(self):
 		self.model = LinearRegression().fit(self.X_test_training.values, self.Y_test_training.values)
-		rmse = RMSE(self.model.predict(self.X_test.values), self.Y_test.values)
-		return rmse
+		prediction_set = self.model.predict(self.X_test.values)
+		rmse = RMSE(prediction_set, self.Y_test.values)
+		return (rmse, prediction_set)
 
 	
 class myKNN():
 	def __init__(self, X_sets, Y_sets, k_set, feats):
+		self.feats = feats
 		self.X_test_training = X_sets[0][feats]
 		self.Y_test_training = Y_sets[0]
 		self.X_test = X_sets[1][feats]
@@ -58,11 +60,15 @@ class myKNN():
 	
 	def test(self):
 		self.model = KNeighborsRegressor(n_neighbors=self.k).fit(self.X_test_training.values, self.Y_test_training.values)
-		rmse = RMSE(self.model.predict(self.X_test.values), self.Y_test.values)
-		return rmse
+		prediction_set = self.model.predict(self.X_test.values)
+		rmse = RMSE(prediction_set, self.Y_test.values)
+		return (rmse, prediction_set)
 		
 	def getHistory(self):
 		return self.rmse_list
+		
+	def predict(self, X):
+		return self.model.predict(X[self.feats].values)
 		
 
 	
@@ -80,32 +86,30 @@ class myMLP():
 		
 		self.rmse_list = []
 		
-		if(len(parameter_set)>1):
-			rmse = 1000
-			dump("Hidden nodes parameters to validate:", (parameter_set[0],parameter_set[-1]))
-			bar = Bar(len(parameter_set))
-			for hidden_layer_units in parameter_set:
-				
-				new_model = MLPRegressor((hidden_layer_units,hidden_layer_units), activation='relu', max_iter=10000).fit(self.X_validation_training.values, self.Y_validation_training.values.ravel())
-				
-				new_rmse = RMSE(new_model.predict(self.X_validation.values), self.Y_validation.values)
-				
-				self.rmse_list.append(new_rmse)
-				
-				if(new_rmse < rmse):
-					rmse = new_rmse
-					self.parameter = hidden_layer_units
-				
-				bar.moreBar()
-				
-			bar.noBar()
-		else:
-			self.parameter = parameter_set[0]
+		
+		rmse = 1000
+		dump("Hidden nodes parameters to validate:", (parameter_set[0],parameter_set[-1]))
+		bar = Bar(len(parameter_set))
+		for hidden_layer_units in parameter_set:
+			
+			new_model = MLPRegressor(hidden_layer_sizes=(hidden_layer_units,), activation='relu', max_iter=10000,warm_start=True).fit(self.X_validation_training.values, self.Y_validation_training.values.ravel())
+			
+			new_rmse = RMSE(new_model.predict(self.X_validation.values), self.Y_validation.values)
+			
+			self.rmse_list.append(new_rmse)
+			
+			if(new_rmse < rmse):
+				rmse = new_rmse
+				self.parameter = hidden_layer_units
+			
+			bar.moreBar()
+			
+		bar.noBar()
 			
 		dump("Hidden nodes:", self.parameter)
 
 	def test(self):
-		self.model = MLPRegressor((self.parameter,), activation='relu', max_iter=100000).fit(self.X_test_training.values, self.Y_test_training.values.ravel())
+		self.model = MLPRegressor(hidden_layer_sizes=(self.parameter,), activation='relu', max_iter=100000,warm_start=True).fit(self.X_test_training.values, self.Y_test_training.values.ravel())
 		rmse = RMSE(self.model.predict(self.X_test.values), self.Y_test.values)
 		return rmse
 

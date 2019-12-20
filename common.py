@@ -42,8 +42,13 @@ def RMSE(Y_actual, Y_predicted):
 
 def readData():
 	X1 = pd.read_csv("X1.csv")
+	X2 = pd.read_csv("X2.csv")
 	Y1 = pd.read_csv("Y1.csv",header=None,names=[PM25])
-	return (X1, Y1)
+	return (X1, Y1, X2)
+	
+def writeData(Y):
+	df = pd.DataFrame(Y)
+	df.to_csv(path_or_buf='Y2.csv',index=False, header=False)
 
 #Loading bar	
 #Used to check status of very long computations

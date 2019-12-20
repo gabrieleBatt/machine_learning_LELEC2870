@@ -76,7 +76,7 @@ def removeOutliers(X, Y):
 	df[PM25]=Y[PM25].values
 	df = df.drop(columns=[STATION])
 	z = np.abs(stats.zscore(df))
-	outliers = set(np.where(z > 2)[0])
+	outliers = set(np.where(z > 3)[0])
 	dump("Removing outliers:", len(outliers)) 
 	X = X.drop(outliers,axis=0)
 	Y = Y.drop(outliers,axis=0)
@@ -103,7 +103,6 @@ def normalizeFeatures(X, Y):
 		if column != STATION:
 			X[column] = scaler.fit_transform(X[column].values.reshape(-1,1))
 		
-		
 	#Removal of outlier data
 	X,Y = removeOutliers(X,Y)
 		
@@ -119,4 +118,34 @@ def normalizeFeatures(X, Y):
 	#the names of the dummy variables(one-hot encoding of station, 
 	#and the names of the other features(real_feats)
 	return (X,Y, dfONE.columns.values, real_feats)
+	
+#normalize input for prediction
+def normalizeInput(X):
+	X = X.copy()
+	#Date converted in one variable
+	X[NDATE] = normalizeDate(X[YEAR], X[MONTH], X[DAY], X[HOUR])
+	X = X.drop(columns=[YEAR,MONTH,DAY,HOUR])
+	
+	#Wind direction converted into two trigonometrical variables
+	X[WDS], X[WDC] = normalizeWindDirection(X[WD])
+	X = X.drop(columns=[WD])
+	
+	#All columns are scaled	
+	scaler = MinMaxScaler(feature_range=(0, 1))
+	for column in X.columns:
+		if column != STATION:
+			X[column] = scaler.fit_transform(X[column].values.reshape(-1,1))
+		
+	#One-hot encoding of the station
+	X[STATION] = pd.Categorical(X[STATION])
+	dfONE = pd.get_dummies(X[STATION], prefix = STATION)
+	X = X.drop(columns=[STATION])
+	
+	real_feats = X.columns.values
+	X = pd.concat([X, dfONE], axis=1)
+	
+	#returns the normalized data frames of input and output, 
+	#the names of the dummy variables(one-hot encoding of station, 
+	#and the names of the other features(real_feats)
+	return X
 	
