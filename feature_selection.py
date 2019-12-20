@@ -6,8 +6,9 @@ from scipy import stats
 
 from common import *
 
-
-def selectFeatures(Xn, Y, n_feats, method):
+#Returns n_feats number of features, with either the higher correation or mutual information index, according to the method ('CORR' or 'MI') specified; returns also the one-hot encoding of the section
+def selectFeatures(Xn, Y, n_feats, method, dummy_vars):
+	Xn = Xn.drop(columns=dummy_vars)
 	feature_list = []
 	mutual_info_list = mutual_info_regression(Xn.values, Y.values.T[0])
 	for column in Xn.columns.values:
@@ -19,9 +20,16 @@ def selectFeatures(Xn, Y, n_feats, method):
 	
 	feature_list.sort(key=lambda x: x[1], reverse=True)
 	
-	return Xn.drop(columns=[column for column,_ in feature_list[n_feats:]])	
+	selected_features = []
+	for feat in Xn.drop(columns=[column for column,_ in feature_list[n_feats:]]).columns.values:
+		selected_features.append(feat)
+	for feat in dummy_vars:
+		selected_features.append(feat)
+	return  selected_features
 
-def normalizeDate(year, day, month):
+#Converts year, month, day, and hour in one variable: 
+#hours from 1 jan 2013
+def normalizeDate(year, month, day, hour):
 	normalized = []
 	for i in range(day.shape[0]):
 		month_base = {
@@ -38,13 +46,12 @@ def normalizeDate(year, day, month):
 		11: 304,
 		12: 334
 		}
-		days = day[i]+month_base.get(month[i], "Invalid month")+(year[i]-2013)*365
-		if(year[i] > 2016 or (year[i] == 2016 and month[i] > 2)):
-			days += 1
-	
-		normalized.append(days)	
+		days = day[i]+month_base.get(month[i], "Invalid month")+(year[i]-2013)*365.25
+		hours = (days-1)*24 + hour[i]
+		normalized.append(hours)	
 	return normalized
-	
+
+#Wind direction converted into two trigonometrical variables
 def normalizeWindDirection(wind_dir):
 	sin = []
 	cos = []
@@ -61,21 +68,14 @@ def normalizeWindDirection(wind_dir):
 		sin.append(np.sin(angle))
 		cos.append(np.cos(angle))
 	return (sin,cos)
-	
-def normalizeHour(hours):
-	sin = []
-	cos = []
-	for h in hours:
-		angle = 2*np.pi*h/24
-		sin.append(np.sin(angle))
-		cos.append(np.cos(angle))
-	return (sin,cos)
 
+#Removal of outlier data according to ther Z-score
 def removeOutliers(X, Y):
 	df = X.copy()
 	df[PM25]=Y[PM25].values
+	df = df.drop(columns=[STATION])
 	z = np.abs(stats.zscore(df))
-	outliers = set(np.where(z > 3)[0])
+	outliers = set(np.where(z > 2)[0])
 	dump("Removing outliers:", len(outliers)) 
 	X = X.drop(outliers,axis=0)
 	Y = Y.drop(outliers,axis=0)
@@ -83,32 +83,39 @@ def removeOutliers(X, Y):
 	X = X.reindex(index, method='backfill')
 	Y = Y.reindex(index, method='backfill')
 	return (X,Y)
-	
+
+#The normalized data contains the manipulated features as explained in section 1 of the report(Feature selection)	
 def normalizeFeatures(X, Y):
-	#for i,tuple in enumerate(X.values):
-	#	if tuple[-1] != 0:
-	#		X = X.drop([i],axis=0)
-	#		Y = Y.drop([i], axis=0)
-	#index = [i for i in range(X.shape[0])]
-	#X = X.reindex(index, method='backfill')
-	#Y = Y.reindex(index, method='backfill')
-	X = X.drop(columns=STATION)
+	X = X.copy()
+	Y = Y.copy()
+	#Date converted in one variable
+	X[NDATE] = normalizeDate(X[YEAR], X[MONTH], X[DAY], X[HOUR])
+	X = X.drop(columns=[YEAR,MONTH,DAY,HOUR])
 	
-	X[NDATE] = normalizeDate(X[YEAR], X[DAY], X[MONTH])
-	X = X.drop(columns=[YEAR,MONTH,DAY])
-	
+	#Wind direction converted into two trigonometrical variables
 	X[WDS], X[WDC] = normalizeWindDirection(X[WD])
 	X = X.drop(columns=[WD])
 	
-	X[HS], X[HC] = normalizeHour(X[HOUR])
-	X = X.drop(columns=[HOUR])
-	
+	#All columns distributions (except the station) are normalized
 	for column in X.columns:
-		mean = np.mean(X[column].values)
-		var = np.var(X[column].values)
-		X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
-		
+		if column != STATION:
+			mean = np.mean(X[column].values)
+			var = np.var(X[column].values)
+			X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
+	
+	#Removal of outlier data
 	X,Y = removeOutliers(X,Y)
 		
-	return (X,Y)
+	#One-hot encoding of the station
+	X[STATION] = pd.Categorical(X[STATION])
+	dfONE = pd.get_dummies(X[STATION], prefix = STATION)
+	X = X.drop(columns=[STATION])
+	
+	real_feats = X.columns.values
+	X = pd.concat([X, dfONE], axis=1)
+	
+	#returns the normalized data frames of input and output, 
+	#the names of the dummy variables(one-hot encoding of station, 
+	#and the names of the other features(real_feats)
+	return (X,Y, dfONE.columns.values, real_feats)
 	
