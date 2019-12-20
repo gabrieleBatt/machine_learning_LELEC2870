@@ -1,9 +1,9 @@
-import math
-import random
-import time
 import sys
-from sklearn.metrics import mean_squared_error
+import math
+import pickle
 import pandas as pd
+
+from sklearn.metrics import mean_squared_error
 
 YEAR = 'year'
 MONTH = 'month'  
@@ -28,6 +28,8 @@ WDC = 'wdCos'
 WSPM = 'WSPM'
 STATION = 'station'
 PM25 = 'PM2.5'
+
+
 
 def dump(str, obj):
 	print("--------------------------------------------------------------------------------------")
@@ -62,4 +64,13 @@ class Bar():
 	def noBar(self):
 		sys.stdout.write('\r'+' '*(int(self.len/self.ratio)+2)+'\r')
 		sys.stdout.flush()
-		
+
+#To have consistent runs, the training, validation and testing sets are fixed and sved in files		
+with open('train_test.data', 'rb') as filehandle:
+    TEST_TRAINING_INDECES = pickle.load(filehandle)
+with open('test.data', 'rb') as filehandle:
+    TEST_INDECES = pickle.load(filehandle)
+with open('train_validation.data', 'rb') as filehandle:
+    VALIDATION_TRAINING_INDECES = pickle.load(filehandle)
+with open('validation.data', 'rb') as filehandle:
+    VALIDATION_INDECES = pickle.load(filehandle)

@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
-from sklearn.feature_selection import mutual_info_regression
-from sklearn.ensemble import ExtraTreesClassifier
+
 from scipy import stats
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.feature_selection import mutual_info_regression
 
 from common import *
 
@@ -96,13 +97,13 @@ def normalizeFeatures(X, Y):
 	X[WDS], X[WDC] = normalizeWindDirection(X[WD])
 	X = X.drop(columns=[WD])
 	
-	#All columns distributions (except the station) are normalized
+	#All columns are scaled	
+	scaler = MinMaxScaler(feature_range=(0, 1))
 	for column in X.columns:
 		if column != STATION:
-			mean = np.mean(X[column].values)
-			var = np.var(X[column].values)
-			X[column] = [(value-mean)/np.sqrt(var) for value in X[column].values]
-	
+			X[column] = scaler.fit_transform(X[column].values.reshape(-1,1))
+		
+		
 	#Removal of outlier data
 	X,Y = removeOutliers(X,Y)
 		

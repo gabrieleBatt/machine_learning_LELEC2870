@@ -1,5 +1,5 @@
-from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.neural_network import MLPRegressor
 
 from common import *

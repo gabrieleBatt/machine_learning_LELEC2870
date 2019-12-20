@@ -1,14 +1,12 @@
 import sys
-import matplotlib.pyplot as plt
-import matplotlib as mpl
+import pickle
 import numpy as np
-import random
+import matplotlib.pyplot as plt
 ######################################################
 from common import *
-from feature_selection import *
 from model_maker import *
+from feature_selection import *
 from sklearn.feature_selection import mutual_info_regression
-from sklearn.model_selection import train_test_split
 ######################################################
 
 options = sys.argv[1:]
@@ -32,8 +30,12 @@ dump("Dummies:", dummy_vars)
 #Here we divide the data in sets used for testing, training, and validation
 df = X1_normalized.copy()
 df[PM25] = Y1_normalized.values
-train_test , test = train_test_split(df, test_size = 0.1)
-train_validation , validation = train_test_split(train_test, test_size = 0.1)
+train_test = df.iloc[TEST_TRAINING_INDECES] 
+test = df.iloc[TEST_INDECES] 
+train_validation = df.iloc[VALIDATION_TRAINING_INDECES] 
+validation = df.iloc[VALIDATION_INDECES] 
+
+
 
 X1_test_training = train_test.drop(columns=[PM25])
 Y1_test_training = train_test[PM25]
@@ -57,7 +59,7 @@ Y1_sets = (Y1_test_training, Y1_test, Y1_validation_training, Y1_validation)
 #Uses a training set and test set
 #Trains a linear regression model and tests it
 if(do_all or '-lm' in options or '-m' in options):
-	feats_selected = selectFeatures(X1_normalized, Y1_normalized, len(real_vars), 'CORR',dummy_vars)
+	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 4, 'CORR',dummy_vars)
 
 	dump("Selected - LM:", feats_selected)
 
@@ -73,11 +75,11 @@ if(do_all or '-lm' in options or '-m' in options):
 #Trains a KNN model with Euclidean distance as distance function and validates for every parameter k in k_set
 #After having selected the best k, it trains it again and tests it
 if(do_all or '-knn' in options or '-m' in options):
-	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 6, 'CORR', dummy_vars)
+	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 4, 'CORR', dummy_vars)
 
 	dump("Selected - KNN:", feats_selected)
 
-	k_set = [i for i in range(1,200)]
+	k_set = [i for i in range(1,50)]
 	
 	KNN_model = myKNN(X1_sets, Y1_sets, k_set, feats_selected)
 	rmse = KNN_model.test()
@@ -96,7 +98,7 @@ if(do_all or '-knn' in options or '-m' in options):
 #After having selected the best number of nodes in the hidden, it trains it again and tests it
 if(do_all or '-mlp' in options or '-m' in options):
 
-	parameter_set = [i for i in range(1,300)]
+	parameter_set = [i for i in range(150,250)]
 	
 	feats_selected = selectFeatures(X1_normalized, Y1_normalized, 4, 'MI', dummy_vars)
 	
